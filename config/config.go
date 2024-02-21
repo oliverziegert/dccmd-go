@@ -15,12 +15,12 @@ const (
 	DEBUG              = "debug"
 	VERSION            = "version"
 	ALIASES            = "aliases"
-	DOMAIN             = "domain"
-	CLIENTID           = "clientId"
+	DOMAIN             = "Domain"
+	CLIENTID           = "ClientId"
 	CLIENTSECRET       = "clientSecret"
-	RETURNFLOW         = "returnFlow"
-	BINDADDRESS        = "bindAddress"
-	BINDPORT           = "bindPort"
+	RETURNFLOW         = "ReturnFlow"
+	BINDADDRESS        = "BindAddress"
+	BINDPORT           = "BindPort"
 	ACCESSTOKEN        = "accessToken"
 	TOKENTYPE          = "tokenType"
 	REFRESHTOKEN       = "refreshToken"
@@ -35,12 +35,12 @@ type Config struct {
 }
 
 type Alias struct {
-	domain       string     `mapstructure:"domain,omitempty"`
-	clientId     string     `mapstructure:"clientId,omitempty"`
+	Domain       string     `mapstructure:"domain,omitempty"`
+	ClientId     string     `mapstructure:"clientId,omitempty"`
 	clientSecret string     `mapstructure:"clientSecret,omitempty"`
-	returnFlow   ReturnFlow `mapstructure:"returnFlow,omitempty"`
-	bindAddress  string     `mapstructure:"bindAddress,omitempty"`
-	bindPort     uint16     `mapstructure:"bindPort,omitempty"`
+	ReturnFlow   ReturnFlow `mapstructure:"returnFlow,omitempty"`
+	BindAddress  string     `mapstructure:"bindAddress,omitempty"`
+	BindPort     uint16     `mapstructure:"bindPort,omitempty"`
 	accessToken  string     `mapstructure:"accessToken,omitempty"`
 	tokenType    string     `mapstructure:"tokenType,omitempty"`
 	refreshToken string     `mapstructure:"refreshToken,omitempty"`
@@ -170,31 +170,61 @@ func NewAlias(
 	bindPort uint16) *Alias {
 
 	return &Alias{
-		domain:       domain,
-		clientId:     clientId,
+		Domain:       domain,
+		ClientId:     clientId,
 		clientSecret: clientSecret,
-		returnFlow:   returnFlow,
-		bindAddress:  bindAddress,
-		bindPort:     bindPort,
+		ReturnFlow:   returnFlow,
+		BindAddress:  bindAddress,
+		BindPort:     bindPort,
 	}
 }
 
 func AddAlias(target string, alias *Alias) error {
 	cp := fmt.Sprintf("%s.%s.", ALIASES, target)
-	viper.Set(cp+DOMAIN, alias.domain)
-	viper.Set(cp+CLIENTID, alias.clientId)
+	viper.Set(cp+DOMAIN, alias.Domain)
+	viper.Set(cp+CLIENTID, alias.ClientId)
 	viper.Set(cp+CLIENTSECRET, alias.clientSecret)
-	viper.Set(cp+RETURNFLOW, alias.returnFlow)
-	viper.Set(cp+BINDADDRESS, alias.bindAddress)
-	viper.Set(cp+BINDPORT, alias.bindPort)
+	viper.Set(cp+RETURNFLOW, alias.ReturnFlow)
+	viper.Set(cp+BINDADDRESS, alias.BindAddress)
+	viper.Set(cp+BINDPORT, alias.BindPort)
 	return viper.WriteConfig()
 }
 
-func RemoveTarget(target string) error {
+func RemoveAlias(target string) error {
 	cp := fmt.Sprintf("%s.%s", ALIASES, target)
 	return unset(cp)
 }
 
+func GetAlias(target string) (*Alias, error) {
+	var alias *Alias
+	cp := fmt.Sprintf("%s.%s.", ALIASES, target)
+	if !IsSet(fmt.Sprintf("%s.%s", ALIASES, target)) {
+		return nil, fmt.Errorf("target %s is not valid", target)
+	}
+	alias = &Alias{
+		Domain:       GetString(cp + DOMAIN),
+		ClientId:     GetString(cp + CLIENTID),
+		clientSecret: GetString(cp + CLIENTSECRET),
+		ReturnFlow:   ReturnFlow(GetString(cp + RETURNFLOW)),
+		BindAddress:  GetString(cp + BINDADDRESS),
+		BindPort:     uint16(GetInt(cp + BINDPORT)),
+	}
+	return alias, nil
+}
+
+func GetAliases() (*map[string]*Alias, error) {
+	aliases := make(map[string]*Alias)
+	for _, target := range GetTargets() {
+		alias, err := GetAlias(target)
+		if err != nil {
+			return nil, err
+		}
+		aliases[target] = alias
+	}
+	return &aliases, nil
+}
+
+// https://github.com/spf13/viper/issues/632
 func unset(vars ...string) error {
 	cfg := viper.AllSettings()
 	vals := cfg

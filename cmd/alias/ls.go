@@ -23,6 +23,7 @@ package alias
 
 import (
 	"fmt"
+	"github.com/gosuri/uitable"
 	"github.com/oliverziegert/dccmd-go/config"
 	"github.com/spf13/cobra"
 )
@@ -37,11 +38,19 @@ var lsCmd = &cobra.Command{
 
 func lsRun(cmd *cobra.Command, args []string) {
 	fmt.Println("ls called")
-	targets := config.GetTargets()
-
-	for _, target := range targets {
-		fmt.Println(target)
+	aliases, err := config.GetAliases()
+	cobra.CheckErr(err)
+	if len(*aliases) == 0 {
+		fmt.Println("No aliases defined jet. Use 'dccmd alias add' to add an alias.")
+		return
 	}
+	table := uitable.New()
+	table.Wrap = true
+	table.AddRow("Alias", "Domain", "Client ID", "Return flow", "Bind address", "Bind port")
+	for target, alias := range *aliases {
+		table.AddRow(target, alias.Domain, alias.ClientId, alias.ReturnFlow, alias.BindAddress, alias.BindPort)
+	}
+	fmt.Println(table)
 }
 
 func init() {

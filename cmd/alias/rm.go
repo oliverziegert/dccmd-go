@@ -55,7 +55,7 @@ func validateRm(cmd *cobra.Command, args []string) error {
 func runRm(cmd *cobra.Command, args []string) {
 	fmt.Println("rm called")
 	target := args[0]
-	err := config.RemoveTarget(target)
+	err := config.RemoveAlias(target)
 	cobra.CheckErr(err)
 }
 
